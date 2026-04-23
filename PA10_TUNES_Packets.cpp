@@ -70,9 +70,9 @@ struct FileData
 //------------------------------------------------------------------------------
 // local function prototypes
 //------------------------------------------------------------------------------
+void protocolAnalyzer();
 void buildSongMap(std::map<uint32_t, std::string>& songMap);
 void displaySongLines(std::map<uint32_t, std::string>& songMap);
-void protocolAnalyzer();
 
 //------------------------------------------------------------------------------
 // entry point
