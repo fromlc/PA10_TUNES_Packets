@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="PA10_TUNES_Packets.vcxproj" />
+  <Project Path="PA10_TUNES_Packets.vcxproj" Id="23a8a375-f659-4c16-bd43-b2eabf782ddf" />
 </Solution>

@@ -28,7 +28,7 @@ BYTELEN_IP_ADDRESS + BYTELEN_PROTOCOL_ID + BYTELEN_SEQNO + BYTELEN_DATALEN;
 // 192.168.1.10
 uint32_t MY_IP_ADDRESS = 0xc0a8010a;
 
-// TUNES protocol ID
+// TUNES protocol ID 0xa
 constexpr int PROTOCOL_ID_TUNES = 10;
 
 //------------------------------------------------------------------------------
@@ -109,6 +109,7 @@ void buildSongMap(std::map<uint32_t, std::string>& songMap)
     FileData fd;
 
     std::ifstream input(INPUT_FILENAME);
+
     std::string line;
     while (getline(input, line))
     {
@@ -149,7 +150,7 @@ void buildSongMap(std::map<uint32_t, std::string>& songMap)
 
         // Convert the ASCII IP number to a uint32_t number.
         // IP numbers are too long for std::stoi(), so use std::strtoll().
-        // You need this dummy pointer for the strtoll() reference parameter.
+        // You need this dummy pointer for the std::strtoll() reference parameter.
         char* pEnd {};
         //#TODO
 
