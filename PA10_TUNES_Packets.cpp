@@ -1,7 +1,9 @@
 //------------------------------------------------------------------------------
-// PA10_TUNES_Packets.cpp
+// PA10_grading.cpp
 //------------------------------------------------------------------------------
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -12,13 +14,13 @@
 //------------------------------------------------------------------------------
 const std::string INPUT_FILENAME = "TUNES_song.txt";
 
-// IP Address (10 bytes ASCII)
+// IP Address (4 byte number, 10 bytes ASCII)
 const int BYTELEN_IP_ADDRESS = 10;
-// Protocol ID (3 bytes ASCII)
+// Protocol ID (1 byte number, 3 bytes ASCII)
 const int BYTELEN_PROTOCOL_ID = 3;
-// Sequence number (10 bytes ASCII)
+// Sequence number (4 byte number, 10 bytes ASCII)
 const int BYTELEN_SEQNO = 10;
-// Data byte length (4 bytes ASCII)
+// Data byte length (2 byte number, 4 bytes ASCII)
 const int BYTELEN_DATALEN = 4;
 
 // combined length of line header fields
@@ -28,15 +30,13 @@ BYTELEN_IP_ADDRESS + BYTELEN_PROTOCOL_ID + BYTELEN_SEQNO + BYTELEN_DATALEN;
 // 192.168.1.10
 uint32_t MY_IP_ADDRESS = 0xc0a8010a;
 
-// TUNES protocol ID 0xa
+// TUNES protocol ID
 constexpr int PROTOCOL_ID_TUNES = 10;
 
-//------------------------------------------------------------------------------
-// We put the header field pointers in a struct so the destructor 
-// Will delete memory for us at the right time.
-//------------------------------------------------------------------------------
+// put pointers in struct so destructor will delete
 struct FileData
 {
+    // constructor
     char* pIPAddress;
     char* pProtocolID;
     char* pSeqno;
@@ -46,51 +46,44 @@ struct FileData
     uint32_t seqno;
     uint8_t protocolID;
 
-    // constructor
     FileData() : ipAddress(0), seqno(0), protocolID(0)
     {
-        // Dynamically allocate buffer space for each header field.
-        // Use the constants above for appropriate lengths.
-        // Add 1 to each length to make room for a zero terminator byte!
-        //#TODO modify these initializations.
-        pIPAddress = nullptr;
-        pProtocolID = nullptr;
-        pSeqno = nullptr;
-        pDataLen = nullptr;
+        pIPAddress = new char[BYTELEN_IP_ADDRESS + 1];
+        pProtocolID = new char[BYTELEN_PROTOCOL_ID + 1];
+        pSeqno = new char[BYTELEN_SEQNO + 1];
+        pDataLen = new char[BYTELEN_DATALEN + 1];
     }
 
     // destructor
     ~FileData()
     {
-        // Delete each header field buffer
-        //#TODO
+        delete[] pIPAddress;
+        delete[] pProtocolID;
+        delete[] pSeqno;
+        delete[] pDataLen;
     }
 };
 
 //------------------------------------------------------------------------------
 // local function prototypes
 //------------------------------------------------------------------------------
-void protocolAnalyzer();
 void buildSongMap(std::map<uint32_t, std::string>& songMap);
 void displaySongLines(std::map<uint32_t, std::string>& songMap);
+void protocolAnalyzer();
 
 //------------------------------------------------------------------------------
 // entry point
 //------------------------------------------------------------------------------
 int main()
 {
-    // isolate memory allocations for heap profiling 
     protocolAnalyzer();
 
-    std::cout << "\nType any key to exit app...\n";
-    std::cin.get();
+    //std::cout << "\nWaiting for keyboard input before terminating...\n";
+    //std::cin.get();
 }
 
 //------------------------------------------------------------------------------
-// - does all protocol analysis work
-// - builds song line map
-// - displays song line map
-// - keeps all memory allocations separate from main for heap profiling 
+// isolate memory allocations 
 //------------------------------------------------------------------------------
 void protocolAnalyzer()
 {
@@ -98,6 +91,9 @@ void protocolAnalyzer()
 
     buildSongMap(songMap);
     displaySongLines(songMap);
+
+    // for memory delete tracking
+    songMap.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -105,11 +101,9 @@ void protocolAnalyzer()
 //------------------------------------------------------------------------------
 void buildSongMap(std::map<uint32_t, std::string>& songMap)
 {
-    // This struct contains all field header buffers
     FileData fd;
 
     std::ifstream input(INPUT_FILENAME);
-
     std::string line;
     while (getline(input, line))
     {
@@ -117,47 +111,47 @@ void buildSongMap(std::map<uint32_t, std::string>& songMap)
         // this is not an allocation, only a pointer to std::string data
         const char* pLine = line.c_str();
 
-        // Display all lines in file
-        // These will include lines that aren't part of the song
-        // Song lines will be out of order
-        std::cout << pLine << "\n";
+        // copy IP address
+        memcpy(fd.pIPAddress, pLine, BYTELEN_IP_ADDRESS);
+        pLine += BYTELEN_IP_ADDRESS;
+        fd.pIPAddress[BYTELEN_IP_ADDRESS] = (char)0;
 
-        // Copy the IP address into the FileData address buffer fd.pIPAddress
-        // Use the C++ library function memcpy().
-        // Then add the correct number of bytes to pLine,
-        // so that pLine points to the next header field.
-        // Store a char(0) at the end of the pIPAddress buffer.
-        //#TODO
+        // copy Protocol ID
+        memcpy(fd.pProtocolID, pLine, BYTELEN_PROTOCOL_ID);
+        pLine += BYTELEN_PROTOCOL_ID;
+        fd.pProtocolID[BYTELEN_PROTOCOL_ID] = (char)0;
 
-        // Copy the Protocol ID header field the same way.
-        //#TODO
+        // copy Sequence Number
+        memcpy(fd.pSeqno, pLine, BYTELEN_SEQNO);
+        pLine += BYTELEN_SEQNO;
+        fd.pSeqno[BYTELEN_SEQNO] = (char)0;
 
-        // Copy the Sequence Number header field the same way.
-        //#TODO
+        // copy Data Length in bytes
+        memcpy(fd.pDataLen, pLine, BYTELEN_DATALEN);
+        pLine += BYTELEN_DATALEN;
+        fd.pDataLen[BYTELEN_DATALEN] = (char)0;
 
-        // Copy the Data Length header field the same way.
-        //#TODO
+        // convert ASCII sequence to number 
+        fd.seqno = std::stoi(fd.pSeqno, nullptr, 16);
 
-        // Convert the ASCII Sequence Number to a uint32_t number.
-        // The Sequence Number is in hexadecimal format,
-        // so the 16 argument indicates hex number conversion.
-        //#TODO uncomment next line after you have a valid fd.seqno
-        //fd.seqno = std::stoi(fd.pSeqno, nullptr, 16);
+        // convert ASCII protocol ID to number 
+        fd.protocolID =
+            static_cast<uint8_t>(std::stoi(fd.pProtocolID, nullptr, 16));
 
-        // Convert the ASCII protocol ID to a uint8_t number the same way.
-        // You'll need a static_cast for this one.
-        //#TODO
-
-        // Convert the ASCII IP number to a uint32_t number.
-        // IP numbers are too long for std::stoi(), so use std::strtoll().
-        // You need this dummy pointer for the std::strtoll() reference parameter.
+        // need dummy pointer for strtoll() reference parameter
         char* pEnd {};
-        //#TODO
+        fd.ipAddress =
+            static_cast<uint32_t>(std::strtoll(fd.pIPAddress, &pEnd, 16));
 
-        // Convert pLine to std::string and add key value pair to map
-        //#TODO
+
+        // add song line to map
+        if (fd.ipAddress == MY_IP_ADDRESS && fd.protocolID == PROTOCOL_ID_TUNES)
+        {
+            // std::string's copy constructor creates song line string for map 
+            std::string strSongLine { pLine };
+            songMap.insert({ fd.seqno, strSongLine });
+        }
     }
-    std::cout << "\n";
     // done with file
     input.close();
 }
@@ -167,6 +161,9 @@ void buildSongMap(std::map<uint32_t, std::string>& songMap)
 //------------------------------------------------------------------------------
 void displaySongLines(std::map<uint32_t, std::string>& songMap)
 {
-    // Display song lines in order 
-    //#TODO
+    // display song lines in order 
+    for (auto& kv : songMap)
+    {
+        std::cout << kv.second << "\n";
+    }
 }
